@@ -1,0 +1,117 @@
+:root {
+  --font-serif: 'Gowun Batang', serif;
+  --font-sans: 'Noto Sans KR', 'Outfit', sans-serif;
+  
+  /* Color Palette */
+  --bg-color: #FAF8F5;
+  --card-bg: #FAF6EE;
+  --primary-color: #2E4F37;
+  --primary-hover: #1E3825;
+  --primary-light: #6A8E72;
+  --primary-subtle: #EDF3EE;
+  --secondary-color: #E27B66; /* Coral Warmth for Thermometer */
+  --secondary-subtle: #FDF1EE;
+  --text-main: #2E332F;
+  --text-muted: #737C76;
+  --border-color: #EAE3D5;
+  --white: #FFFFFF;
+  
+  /* Shadows & Effects */
+  --shadow-soft: 0 10px 30px rgba(46, 79, 55, 0.04);
+  --shadow-card: 0 4px 20px rgba(46, 79, 55, 0.06);
+  --shadow-button: 0 4px 12px rgba(46, 79, 55, 0.15);
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+
+  font-family: var(--font-sans);
+  color: var(--text-main);
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#root {
+  width: 100%;
+  max-width: 480px; /* Mobile width constraint for KakaoTalk */
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 0 40px rgba(46, 79, 55, 0.03);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+/* Scrollbar styling for native feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-light);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Common Typography & Animations */
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  margin: 0;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Micro-animations */
+@keyframes pulseLeaf {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.05) rotate(3deg); }
+}
+
+@keyframes floatLeaf {
+  0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+  50% { transform: translateY(-8px) rotate(15deg); opacity: 1; }
+  100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+}
+
+@keyframes wave {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-25%) translateZ(0) scaleY(0.85); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
