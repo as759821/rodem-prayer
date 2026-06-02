@@ -1,10 +1,24 @@
 // Rodem Prayer Meeting - DB & LocalStorage Service
+import { createClient } from '@supabase/supabase-js';
 
 const LOCAL_STORAGE_KEYS = {
   USER_NAME: 'rodem_prayer_user_name',
   USER_LOGS: 'rodem_prayer_user_logs',
   MOCK_INIT: 'rodem_prayer_mock_initialized_v1'
 };
+
+// Supabase URL & Anon Key (Vite 환경 변수)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Supabase 클라이언트 초기화 (환경 변수가 있을 때만)
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('🌿 Supabase가 성공적으로 활성화되었습니다.');
+} else {
+  console.log('📦 LocalStorage + Mock 시뮬레이터 모드로 작동 중입니다. (배포 시 Supabase 변수 설정 가능)');
+}
 
 // 기본 가상 데이터 (LocalStorage 시뮬레이션 모드에서 사용)
 const MOCK_PRAYER_FEED = [
@@ -44,6 +58,52 @@ export const dbService = {
 
   // 2. 전체 통계 조회
   async getGlobalStats() {
+    // A. Supabase 모드
+    if (supabase) {
+      try {
+        // 1. 전체 누적 시간 계산
+        const { data: logs, error: logsError } = await supabase
+          .from('rodem_prayer_logs')
+          .select('minutes');
+          
+        if (logsError) throw logsError;
+
+        const dbTotalMinutes = logs.reduce((sum, log) => sum + Number(log.minutes), 0);
+        const grandTotalMinutes = (INITIAL_STATS.baseHours * 60) + INITIAL_STATS.baseMinutes + dbTotalMinutes;
+        const totalHours = Math.floor(grandTotalMinutes / 60);
+        const totalMinutes = grandTotalMinutes % 60;
+
+        // 2. 오늘 방문하여 기도한 고유 인원 수
+        // KST 기준 오늘 시작 시점 계산 (UTC 변환)
+        const todayKST = new Date();
+        todayKST.setHours(0, 0, 0, 0);
+        const isoStartOfToday = todayKST.toISOString();
+
+        const { data: todayLogs, error: todayError } = await supabase
+          .from('rodem_prayer_logs')
+          .select('name')
+          .gte('created_at', isoStartOfToday);
+
+        if (todayError) throw todayError;
+
+        // 중복 제거하여 고유 인원 수 카운트
+        const uniqueNames = new Set(todayLogs.map(log => log.name));
+        // 가상 방문 인원을 베이스로 하여 자연스럽게 누적
+        const todayVisitors = INITIAL_STATS.baseTodayVisitors + uniqueNames.size;
+
+        return {
+          totalHours,
+          totalMinutes,
+          targetHours: INITIAL_STATS.baseTargetHours,
+          todayVisitors,
+          progressPercentage: Math.min(Math.round((grandTotalMinutes / (INITIAL_STATS.baseTargetHours * 60)) * 1000) / 10, 100)
+        };
+      } catch (err) {
+        console.error('Supabase getGlobalStats 에러, 로컬 모드로 대체 작동합니다:', err);
+      }
+    }
+
+    // B. LocalStorage 폴백 모드
     const userLogs = this._getUserLogs();
     const userTotalMinutes = userLogs.reduce((sum, log) => sum + Number(log.minutes), 0);
     const mockTotalMinutes = MOCK_PRAYER_FEED.reduce((sum, log) => sum + Number(log.minutes), 0);
@@ -65,6 +125,32 @@ export const dbService = {
 
   // 3. 기도 피드(방명록) 전체 목록 조회
   async getPrayerFeed() {
+    // A. Supabase 모드
+    if (supabase) {
+      try {
+        const { data: logs, error } = await supabase
+          .from('rodem_prayer_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+        
+        const currentUserName = this.getUserName();
+        return logs.map(log => ({
+          id: log.id,
+          name: log.name,
+          minutes: log.minutes,
+          memo: log.memo,
+          timestamp: log.created_at,
+          isUser: log.name === currentUserName
+        }));
+      } catch (err) {
+        console.error('Supabase getPrayerFeed 에러, 로컬 모드로 대체 작동합니다:', err);
+      }
+    }
+
+    // B. LocalStorage 폴백 모드
     const userLogs = this._getUserLogs().map(log => ({
       id: log.id,
       name: log.name,
@@ -87,6 +173,22 @@ export const dbService = {
       memo: memo || '오늘도 은혜로 기도를 마쳤습니다. 🌿'
     };
 
+    // A. Supabase 모드
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('rodem_prayer_logs')
+          .insert([newLog])
+          .select();
+
+        if (error) throw error;
+        return data[0];
+      } catch (err) {
+        console.error('Supabase addPrayerLog 에러, 로컬스토리지에 백업 저장합니다:', err);
+      }
+    }
+
+    // B. LocalStorage 폴백 모드
     const localLog = {
       ...newLog,
       id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
