@@ -30,10 +30,10 @@ const MOCK_PRAYER_FEED = [
 ];
 
 const INITIAL_STATS = {
-  baseHours: 428,
+  baseHours: 0,
   baseMinutes: 35,
   baseTargetHours: 1000,
-  baseTodayVisitors: 8
+  baseTodayVisitors: 1
 };
 
 export const dbService = {
